@@ -1,63 +1,133 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Мой сайт</title>
-    <style>
-        body {
-            background: #17121c;
-            color: white;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 30px;
-        }
-        h1 {
-            color: #ff8fcf;
-            font-size: 40px;
-        }
-        p {
-            color: #e4d5e8;
-            font-size: 18px;
-        }
-        .card {
-            background: #2b2033;
-            padding: 20px;
-            margin: 20px auto;
-            max-width: 300px;
-            border-radius: 20px;
-            border: 1px solid #ff8fcf;
-        }
-        button {
-            background: #ff8fcf;
-            color: #251329;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: white;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase GitHub Auth</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f7f6;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 5px;
+    }
+    #login-btn {
+      background-color: #24292e;
+      color: white;
+    }
+    #login-btn:hover {
+      background-color: #444;
+    }
+    #logout-btn {
+      background-color: #d9534f;
+      color: white;
+      display: none; /* Скрыта по умолчанию */
+    }
+    #logout-btn:hover {
+      background-color: #c9302c;
+    }
+    #user-info {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #user-info img {
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1>✧ Мой мир ✧</h1>
-    <p>Маленький сайт с большой атмосферой ♡</p>
-    <div class="card">
-        <h2>🎀 Обо мне</h2>
-        <p>Здесь начинается моя история...</p>
-    </div>
-    <div class="card">
-        <h2>🌙 Мои мечты</h2>
-        <p>Мечтать — значит создавать будущее.</p>
-    </div>
-    <div class="card">
-        <h2>🐈 Котики</h2>
-        <p>Счастье — это мурчание рядом.</p>
-    </div>
-    <button onclick="alert('Ты прекрасна! 💗')">
-        Нажми на меня ✨
-    </button>
-</body>
-</html>
+ 
+  <h1>Авторизация в приложении</h1>
+  
+  <!-- Кнопки входа и выхода -->
+  <button id="login-btn">Войти через GitHub</button>
+  <button id="logout-btn">Выйти из аккаунта</button>
+  
+  <!-- Сюда выводим данные пользователя -->
+  <div id="user-info"></div>
+ 
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-analytics.js";
+    import { getAuth, signInWithPopup, GithubAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+  
+    const firebaseConfig = {
+      apiKey: "AIzaSyDbVnDnPSOU2hSy7V_sF2f_mwXa8CwQ2gk",
+      authDomain: "project-2-db609.firebaseapp.com",
+      projectId: "project-2-db609",
+      storageBucket: "project-2-db609.firebasestorage.app",
+      messagingSenderId: "129341680436",
+      appId: "1:129341680436:web:33ac69eab66851de1c9361",
+      measurementId: "G-EZ0966QSWS"
+    };
+  
+    // Инициализация Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const auth = getAuth(app);
+    const provider = new GithubAuthProvider();
+  
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userInfoDiv = document.getElementById('user-info');
+ 
+    // Слушатель состояния авторизации
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // Если пользователь вошел, показываем его профиль и кнопку «Выйти»
+        userInfoDiv.innerHTML = `
+          <img src="${user.photoURL}" alt="Аватар">
+          <h2>Привет, ${user.displayName || 'Пользователь'}!</h2>
+          <p>Email: ${user.email || 'скрыт или не указан'}</p>
+        `;
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+      } else {
+        // Если пользователь вышел, очищаем профиль и показываем кнопку «Войти»
+        userInfoDiv.innerHTML = '';
+        loginBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+      }
+    });
+ 
+    // Функция входа
+    async function loginWithGithub() {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error("Ошибка при входе:", error.code, error.message);
+        userInfoDiv.innerHTML = `<p style="color: red;">Ошибка входа: ${error.message}</p>`;
+      }
+    }
+ 
+    // Функция выхода
+    async function logout() {
+      try {
+        await signOut(auth); // Разлогиниваем пользователя в Firebase
+      } catch (error) {
+        console.error("Ошибка при выходе:", error.code, error.message);
+      }
+    }
+  
+    // Привязываем обработчики событий
+    loginBtn.addEventListener('click', loginWithGithub);
+    logoutBtn.addEventListener('click', logout);
+  </script>
+</bo
